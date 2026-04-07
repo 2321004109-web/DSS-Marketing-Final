@@ -100,7 +100,7 @@ if st.session_state.da_chay_solver:
         if st.button("Phân tích ngay bằng AI") and api_key_input:
             with st.spinner("AI đang đọc số liệu và suy nghĩ... "):
                 try:
-                    genai.configure(api_key="AIzaSyAq-j5q_K74ihr5JSl3rVN5rW2HAoclR1E")
+                    genai.configure(api_key="AIzaSyDGRf-Lskg5LJ0vc_Ie6z8f4V-2OZmQ1g0")
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     
                     prompt = f"""
