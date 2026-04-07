@@ -5,83 +5,69 @@ import plotly.express as px
 import google.generativeai as genai
 
 # ==========================================
-# 1. CONFIG
+# CONFIG
 # ==========================================
-st.set_page_config(page_title="DSS Marketing Optimization", layout="wide")
-st.title("Hệ Hỗ Trợ Ra Quyết Định (DSS) - ABC Retail")
-st.markdown("### Tối ưu hóa phân bổ ngân sách Marketing theo kịch bản")
+st.set_page_config(page_title="DSS Marketing", layout="wide")
+st.title("📊 DSS - Tối ưu ngân sách Marketing")
 
 # ==========================================
-# 2. SESSION STATE
+# SESSION
 # ==========================================
-if "da_chay_solver" not in st.session_state:
-    st.session_state.da_chay_solver = False
+if "run" not in st.session_state:
+    st.session_state.run = False
 
 # ==========================================
-# 3. SIDEBAR
+# SIDEBAR
 # ==========================================
-st.sidebar.header("Điều chỉnh Kịch Bản (Inputs)")
+st.sidebar.header("Input")
 
-tong_ngan_sach = st.sidebar.number_input(
-    "Tổng ngân sách tối đa (VNĐ)",
-    min_value=1000000000,
-    max_value=5000000000,
-    value=2500000000,
-    step=100000000
+budget = st.sidebar.number_input(
+    "Tổng ngân sách",
+    1000000000, 5000000000, 2500000000, step=100000000
 )
 
-st.sidebar.subheader("Giới hạn chi tiêu (Tránh bão hòa)")
-max_fb = st.sidebar.number_input("Trần Facebook Ads", value=1000000000, step=100000000)
-max_gg = st.sidebar.number_input("Trần Google Ads", value=800000000, step=100000000)
-max_em = st.sidebar.number_input("Trần Email Marketing", value=1500000000, step=100000000)
+max_fb = st.sidebar.number_input("Max Facebook", value=1000000000)
+max_gg = st.sidebar.number_input("Max Google", value=800000000)
+max_em = st.sidebar.number_input("Max Email", value=1500000000)
 
-st.sidebar.markdown("---")
-
-if st.sidebar.button("Chạy Mô Hình Tối Ưu"):
-    st.session_state.da_chay_solver = True
+if st.sidebar.button("🚀 Chạy Solver"):
+    st.session_state.run = True
 
 # ==========================================
-# 4. SOLVER
+# SOLVER
 # ==========================================
-if st.session_state.da_chay_solver:
+if st.session_state.run:
 
-    prob = pulp.LpProblem("Toi_Uu_Doanh_Thu", pulp.LpMaximize)
+    prob = pulp.LpProblem("Marketing", pulp.LpMaximize)
 
-    x_FB = pulp.LpVariable('Facebook_Ads', lowBound=0)
-    x_GG = pulp.LpVariable('Google_Ads', lowBound=0)
-    x_LI = pulp.LpVariable('LinkedIn_Ads', lowBound=0)
-    x_EM = pulp.LpVariable('Email_Marketing', lowBound=0)
-    x_TT = pulp.LpVariable('TikTok_Ads', lowBound=0)
+    x_FB = pulp.LpVariable('FB', lowBound=150000000)
+    x_GG = pulp.LpVariable('GG', lowBound=150000000)
+    x_LI = pulp.LpVariable('LI', lowBound=150000000)
+    x_EM = pulp.LpVariable('EM', lowBound=150000000)
+    x_TT = pulp.LpVariable('TT', lowBound=150000000)
 
-    # Hàm doanh thu (từ regression)
-    doanh_thu_FB = -783206 + 3.897 * x_FB
-    doanh_thu_GG = -363867 + 5.081 * x_GG
-    doanh_thu_LI = -3349816 + 5.602 * x_LI
-    doanh_thu_EM = -1763155 + 7.153 * x_EM
-    doanh_thu_TT = 2115162 - 0.589 * x_TT
+    # objective
+    prob += (
+        (-783206 + 3.897*x_FB) +
+        (-363867 + 5.081*x_GG) +
+        (-3349816 + 5.602*x_LI) +
+        (-1763155 + 7.153*x_EM) +
+        (2115162 - 0.589*x_TT)
+    )
 
-    prob += (doanh_thu_FB + doanh_thu_GG + doanh_thu_LI + doanh_thu_EM + doanh_thu_TT)
-
-    # Constraints
-    prob += (x_FB + x_GG + x_LI + x_EM + x_TT <= tong_ngan_sach)
-    prob += (x_FB <= max_fb)
-    prob += (x_GG <= max_gg)
-    prob += (x_EM <= max_em)
-
-    # Min budget
-    prob += (x_FB >= 150000000)
-    prob += (x_GG >= 150000000)
-    prob += (x_LI >= 150000000)
-    prob += (x_EM >= 150000000)
-    prob += (x_TT >= 150000000)
+    # constraints
+    prob += x_FB + x_GG + x_LI + x_EM + x_TT <= budget
+    prob += x_FB <= max_fb
+    prob += x_GG <= max_gg
+    prob += x_EM <= max_em
 
     prob.solve()
 
-    if pulp.LpStatus[prob.status] == 'Optimal':
+    if pulp.LpStatus[prob.status] == "Optimal":
 
-        df_kq = pd.DataFrame({
-            "Kênh Marketing": ["Facebook Ads", "Google Ads", "LinkedIn Ads", "Email Marketing", "TikTok Ads"],
-            "Ngân sách tối ưu (VNĐ)": [
+        df = pd.DataFrame({
+            "Kênh": ["Facebook", "Google", "LinkedIn", "Email", "TikTok"],
+            "Ngân sách": [
                 x_FB.varValue,
                 x_GG.varValue,
                 x_LI.varValue,
@@ -90,75 +76,69 @@ if st.session_state.da_chay_solver:
             ]
         })
 
-        tong_dt = pulp.value(prob.objective)
+        revenue = pulp.value(prob.objective)
 
         col1, col2 = st.columns(2)
-        col1.metric("Tổng Doanh Thu Kỳ Vọng", f"{tong_dt:,.0f} VNĐ")
-        col2.metric("Tổng Ngân Sách", f"{df_kq['Ngân sách tối ưu (VNĐ)'].sum():,.0f} VNĐ")
+        col1.metric(" Doanh thu", f"{revenue:,.0f}")
+        col2.metric(" Ngân sách", f"{df['Ngân sách'].sum():,.0f}")
 
         st.markdown("---")
 
-        col_chart, col_table = st.columns([1.5, 1])
+        # chart
+        fig = px.pie(df, values="Ngân sách", names="Kênh", hole=0.4)
+        st.plotly_chart(fig, use_container_width=True)
 
-        with col_chart:
-            fig = px.pie(df_kq,
-                         values='Ngân sách tối ưu (VNĐ)',
-                         names='Kênh Marketing',
-                         hole=0.4)
-            st.plotly_chart(fig, use_container_width=True)
-
-        with col_table:
-            st.dataframe(df_kq.style.format({"Ngân sách tối ưu (VNĐ)": "{:,.0f}"}))
+        st.dataframe(df.style.format({"Ngân sách": "{:,.0f}"}))
 
         # ==========================================
-        # 5. GEMINI AI
+        # AI GEMINI 
         # ==========================================
         st.markdown("---")
-        st.markdown("###  Trợ lý AI Tư Vấn Chiến Lược")
+        st.markdown("###  AI Tư vấn")
 
-        api_key_input = st.text_input("Nhập Gemini API Key:", type="password")
+        api_key = st.text_input("Nhập API Key", type="password")
 
-        if st.button("Phân tích bằng AI"):
+        if st.button("Phân tích AI"):
 
-            if not api_key_input:
-                st.warning(" Vui lòng nhập API key!")
+            if not api_key:
+                st.warning("Nhập API key trước!")
             else:
                 with st.spinner("AI đang phân tích..."):
-
                     try:
-                        genai.configure(api_key=api_key_input)
+                        genai.configure(api_key=api_key)
 
-                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        
+                        model = genai.GenerativeModel("gemini-pro")
 
                         prompt = f"""
-                        Ngân sách tổng: {tong_ngan_sach:,.0f} VNĐ
+                        Ngân sách tổng: {budget}
 
-                        Facebook: {x_FB.varValue:,.0f}
-                        Google: {x_GG.varValue:,.0f}
-                        LinkedIn: {x_LI.varValue:,.0f}
-                        Email: {x_EM.varValue:,.0f}
-                        TikTok: {x_TT.varValue:,.0f}
+                        FB: {x_FB.varValue}
+                        GG: {x_GG.varValue}
+                        LI: {x_LI.varValue}
+                        EM: {x_EM.varValue}
+                        TT: {x_TT.varValue}
 
-                        Doanh thu: {tong_dt:,.0f}
+                        Doanh thu: {revenue}
 
                         Hãy:
-                        1. Đánh giá phương án
-                        2. Nêu rủi ro lớn nhất
-                        3. Đề xuất cải thiện
+                        - Đánh giá
+                        - Nêu rủi ro
+                        - Đề xuất
 
                         Ngắn gọn, chuyên nghiệp.
                         """
 
-                        response = model.generate_content(prompt)
+                        res = model.generate_content(prompt)
 
-                        if response and hasattr(response, "text"):
-                            st.success(" AI đã phân tích:")
-                            st.write(response.text)
+                        if res and hasattr(res, "text"):
+                            st.success("AI phân tích:")
+                            st.write(res.text)
                         else:
-                            st.warning("AI không trả kết quả.")
+                            st.warning("AI không trả lời")
 
                     except Exception as e:
-                        st.error(f" Lỗi: {str(e)}")
+                        st.error(f"Lỗi: {e}")
 
     else:
-        st.error(" Không tìm được nghiệm tối ưu")
+        st.error("Không tối ưu được")
