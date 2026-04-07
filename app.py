@@ -9,6 +9,12 @@ st.set_page_config(page_title="DSS Marketing Optimization", layout="wide")
 st.title("Hệ Hỗ Trợ Ra Quyết Định (DSS) - ABC Retail")
 st.markdown("### Tối ưu hóa phân bổ ngân sách Marketing theo kịch bản")
 
+# ==========================================
+# TRANG BỊ BỘ NHỚ CHO ỨNG DỤNG
+# ==========================================
+if "da_chay_solver" not in st.session_state:
+    st.session_state.da_chay_solver = False
+
 # 2. Xây dựng thanh công cụ bên trái (Sidebar)
 st.sidebar.header("Điều chỉnh Kịch Bản (Inputs)")
 
@@ -21,9 +27,12 @@ max_em = st.sidebar.number_input("Trần ngân sách Email Marketing", value=150
 
 st.sidebar.markdown("---")
 
-# 3. Xử lý thuật toán khi bấm nút
+# Khi bấm nút chạy, lưu trạng thái vào bộ nhớ
 if st.sidebar.button("Chạy Mô Hình Tối Ưu"):
-    
+    st.session_state.da_chay_solver = True
+
+# 3. NẾU BỘ NHỚ GHI NHẬN ĐÃ CHẠY, MỚI HIỂN THỊ KẾT QUẢ
+if st.session_state.da_chay_solver:
     prob = pulp.LpProblem("Toi_Uu_Doanh_Thu", pulp.LpMaximize)
 
     x_FB = pulp.LpVariable('Facebook_Ads', lowBound=0, cat='Continuous')
@@ -54,8 +63,6 @@ if st.sidebar.button("Chạy Mô Hình Tối Ưu"):
     prob.solve()
 
     if pulp.LpStatus[prob.status] == 'Optimal':
-        st.success(" Hệ thống đã tìm ra phương án phân bổ tối ưu nhất cho kịch bản này!")
-        
         ket_qua = {
             "Kênh Marketing": ["Facebook Ads", "Google Ads", "LinkedIn Ads", "Email Marketing", "TikTok Ads"],
             "Ngân sách tối ưu (VNĐ)": [x_FB.varValue, x_GG.varValue, x_LI.varValue, x_EM.varValue, x_TT.varValue]
@@ -91,7 +98,7 @@ if st.sidebar.button("Chạy Mô Hình Tối Ưu"):
         api_key_input = st.text_input("Nhập Google Gemini API Key để kích hoạt:", type="password")
         
         if st.button("Phân tích ngay bằng AI") and api_key_input:
-            with st.spinner("AI đang đọc số liệu và suy nghĩ... "):
+            with st.spinner("AI đang đọc số liệu và suy nghĩ... 🧠"):
                 try:
                     genai.configure(api_key=api_key_input)
                     model = genai.GenerativeModel('gemini-1.5-flash')
