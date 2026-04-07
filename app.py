@@ -98,9 +98,9 @@ if st.session_state.da_chay_solver:
         api_key_input = st.text_input("Nhập Google Gemini API Key để kích hoạt:", type="password")
         
         if st.button("Phân tích ngay bằng AI") and api_key_input:
-            with st.spinner("AI đang đọc số liệu và suy nghĩ... 🧠"):
+            with st.spinner("AI đang đọc số liệu và suy nghĩ... "):
                 try:
-                    genai.configure(api_key=api_key_input)
+                    genai.configure(api_key="AIzaSyAq-j5q_K74ihr5JSl3rVN5rW2HAoclR1E")
                     model = genai.GenerativeModel('gemini-1.5-flash')
                     
                     prompt = f"""
