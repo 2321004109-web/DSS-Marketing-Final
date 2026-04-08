@@ -14,7 +14,7 @@ if "da_chay_solver" not in st.session_state:
     st.session_state.da_chay_solver = False
 
 # 2. THANH CÔNG CỤ (SIDEBAR) - Đầy đủ 5 kênh
-st.sidebar.header("Điều chỉnh Kịch Bản )")
+st.sidebar.header("Điều chỉnh Kịch Bản ")
 
 tong_ngan_sach = st.sidebar.number_input("Tổng ngân sách tối đa (VNĐ)", 
                                         min_value=1000000000, max_value=5000000000, 
