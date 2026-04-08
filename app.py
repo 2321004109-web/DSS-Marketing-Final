@@ -14,13 +14,13 @@ if "da_chay_solver" not in st.session_state:
     st.session_state.da_chay_solver = False
 
 # 2. THANH CÔNG CỤ (SIDEBAR) - Đầy đủ 5 kênh
-st.sidebar.header("Điều chỉnh Kịch Bản (Inputs)")
+st.sidebar.header("Điều chỉnh Kịch Bản )")
 
 tong_ngan_sach = st.sidebar.number_input("Tổng ngân sách tối đa (VNĐ)", 
                                         min_value=1000000000, max_value=5000000000, 
                                         value=2500000000, step=100000000)
 
-st.sidebar.subheader("Chặn trần ngân sách (Upper Bounds)")
+st.sidebar.subheader("Chặn trần ngân sách ")
 max_fb = st.sidebar.number_input("Trần Facebook Ads", value=1000000000, step=100000000)
 max_gg = st.sidebar.number_input("Trần Google Ads", value=800000000, step=100000000)
 max_em = st.sidebar.number_input("Trần Email Marketing", value=1500000000, step=100000000)
@@ -92,9 +92,7 @@ if st.session_state.da_chay_solver:
             st.write("#### Chi tiết phân bổ")
             st.table(df_kq.style.format({"Ngân sách": "{:,.0f}"}))
 
-        # ==========================================
-        # PHẦN TRỢ LÝ AI (GIẢ LẬP NHƯNG NỘI DUNG THẬT)
-        # ==========================================
+        
         st.markdown("---")
         st.subheader(" Trợ lý AI Tư Vấn Chiến Lược (Gemini Integrated)")
         
